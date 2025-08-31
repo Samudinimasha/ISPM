@@ -10,20 +10,31 @@ export default function Login({ setUser }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     if (!role) {
       setError("Please select a role.");
       return;
     }
+
     try {
       const res = await axios.post("http://127.0.0.1:8000/auth/login", {
         email,
         password,
-        role, // Include role in the request
+        role, // ✅ sending role to backend
       });
+
+      // Save token
       localStorage.setItem("token", res.data.access_token);
-      setUser(res.data.user); // Pass user (with email and role) to App.js
+
+      // ✅ Make sure user object has email + role
+      setUser({
+        email: res.data.user?.email || email,
+        role: res.data.user?.role || role,
+      });
+
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || "Login failed! Please check your credentials.";
+      const errorMessage =
+        err.response?.data?.detail || "Login failed! Please check your credentials.";
       setError(errorMessage);
     }
   };
@@ -65,6 +76,7 @@ export default function Login({ setUser }) {
             </option>
             <option value="admin">Admin</option>
             <option value="employee">Employee</option>
+            <option value="employer">Employer</option> {/* ✅ added */}
           </select>
         </div>
         <button type="submit" style={{ padding: "8px 16px" }}>

@@ -1,22 +1,45 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from db import client, users_collection, policies_collection, training_collection
 
-app = FastAPI()
+app = FastAPI(title="ISPM Backend API", version="1.0")
 
+# Root endpoint
 @app.get("/")
 def read_root():
-    return {"message": "Backend is running!"}
+    return {"message": "Hello, World!"}
 
-from backend.routes import auth, policies, quizzes, training
-from backend.database import Base, engine
+# MongoDB health check
+@app.get("/ping-db")
+def ping_db():
+    try:
+        client.admin.command("ping")
+        return {"status": "MongoDB connected ✅"}
+    except Exception as e:
+        return {"status": "MongoDB connection failed ❌", "error": str(e)}
 
-# Create DB tables
-Base.metadata.create_all(bind=engine)
+# Users endpoint
+@app.get("/users")
+def get_users():
+    try:
+        users = list(users_collection.find({}, {"_id": 0}))  # Exclude _id
+        return {"users": users}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-app = FastAPI()
+# Policies endpoint
+@app.get("/policies")
+def get_policies():
+    try:
+        policies = list(policies_collection.find({}, {"_id": 0}))
+        return {"policies": policies}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# Routers
-app.include_router(auth.router)
-app.include_router(policies.router)
-app.include_router(quizzes.router)
-app.include_router(training.router)
-app.include_router(admin.router)
+# Training endpoint
+@app.get("/training")
+def get_training():
+    try:
+        trainings = list(training_collection.find({}, {"_id": 0}))
+        return {"training": trainings}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
